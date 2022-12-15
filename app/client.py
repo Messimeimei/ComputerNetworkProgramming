@@ -5,8 +5,6 @@
 """客户端"""
 
 import socket
-import numpy
-import cv2
 
 client = socket.socket()
 
