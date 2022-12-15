@@ -7,9 +7,8 @@ import socket
 import os
 import threading
 
-HEADER = 64 # 指定接受的数据报的首部长度
+HEADER = 64 # 与客户端约定好的，第一条信息(会告知数据的总长)的长度
 FORMAT = 'utf-8'    # 数据解码的格式
-DISCONNECTED = 'DISCONNECTED!'  # 当接受到这个消息时，服务器就断开连接
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
@@ -17,50 +16,92 @@ ADDR = (SERVER, PORT)
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 
-def handle_client(conn, addr):
+def handle_txt(conn, addr, store_path='../store'):
     """
     处理客户端传来的数据报(由首部和数据部分两部分组成)
     :param conn: 与客户端建立的连接
     :param adrr: 建立的连接的信息，包括客户端的ip地址和端口
+    :param store_path: 写入本地文件夹的地址
     :return:
     """
-    print(f"[NEW CONNECTION]    {addr[0]}:{addr[1]} 已连接上服务器!")
+    print(f"[TXT HANDLER]    {addr[0]}:{addr[1]} has already connected to the server!")
 
-    is_connected = True
-    while is_connected:
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        # 有数据才执行下列操作
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            if msg == DISCONNECTED:
-                is_connected = False
-            print(f"[{addr[0]}:{addr[1]}]    发送的数据：{msg}")
+    msg_length = conn.recv(HEADER).decode(FORMAT)   # 接收数据的总长度,字符型
+    # 有数据才执行下列操作
+    if msg_length:
+        msg_length = int(msg_length)
+        msg = conn.recv(msg_length).decode(FORMAT)  # 接收文件数据
+        # 写入本地文件夹中
+        filename = conn.recv(HEADER).decode(FORMAT) # 接收文件名
+        with open(os.path.join(store_path, filename), 'w', encoding='utf-8') as f:
+            f.write(msg)
 
-            # 服务器回复收到
-            recv_msg = '服务器已经收到消息!'
-            byte_recv_msg = str(len(recv_msg)).encode(FORMAT)
-            conn.send(byte_recv_msg + b' ' * (HEADER - len(byte_recv_msg))) # 先发送首部数据
-            conn.send(recv_msg.encode(FORMAT))
+        print(f"[FILE_NAME] {filename}")
+        print(f"[RECEIVED DATA] {msg}")
 
-    conn.close()    # 断开连接
+def handle_img(conn, addr, store_path='../store'):
+    """
+    处理客户端传来的数据报(由首部和数据部分两部分组成)
+    :param conn: 与客户端建立的连接
+    :param adrr: 建立的连接的信息，包括客户端的ip地址和端口
+    :param store_path: 写入本地文件夹的地址
+    :return:
+    """
+    print(f"[IMAGE HANDLER]    {addr[0]}:{addr[1]} has already connected to the server!")
+
+    msg_length = conn.recv(HEADER).decode(FORMAT)   # 接收数据的总长度,字符型
+    # 有数据才执行下列操作
+    if msg_length:
+        msg_length = int(msg_length)
+        msg = conn.recv(msg_length)  # 接收文件数据
+        # 写入本地文件夹中
+        filename = conn.recv(HEADER).decode(FORMAT) # 接收文件名
+        with open(os.path.join(store_path, filename), 'wb') as f:
+            f.write(msg)
+
+        print(f"[IMAGE_NAME] {filename}")
+
+def handle_video(conn, addr, store_path='../store'):
+    """
+    处理客户端传来的数据报(由首部和数据部分两部分组成)
+    :param conn: 与客户端建立的连接
+    :param adrr: 建立的连接的信息，包括客户端的ip地址和端口
+    :param store_path: 写入本地文件夹的地址
+    :return:
+    """
+    print(f"[VIDEO HANDLER]    {addr[0]}:{addr[1]} has already connected to the server!")
+
+    msg_length = conn.recv(HEADER).decode(FORMAT)   # 接收数据的总长度,字符型
+    # 有数据才执行下列操作
+    if msg_length:
+        msg_length = int(msg_length)
+        msg = conn.recv(msg_length)  # 接收文件数据
+        # 写入本地文件夹中
+        filename = conn.recv(HEADER).decode(FORMAT) # 接收文件名
+        with open(os.path.join(store_path, filename), 'wb') as f:
+            f.write(msg)
+
+        print(f"[VIDEO_NAME] {filename}")
 
 
 def start():
     """启动服务器"""
-    print(f"[LISTENING] 服务器正在 {SERVER} 上监听")
+    print(f"[LISTENING] Listinging on {SERVER}")
 
     server.listen()
     while True:
         conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))   # 每一个客户端对应一个服务器的线程
-        thread.start()
-
-        # 进程数-1表示已连接的客户端个数，-1表示自身进程不算
-        print(f"[CONNECTION NUMBER]    已连接客户端个数：{threading.activeCount() - 1}")
+        handle_img(conn, addr)
+        break
+    while True:
+        handle_txt(conn, addr)
+        break
+    while True:
+        handle_video(conn, addr)
+        break
 
 
 if __name__ == '__main__':
-    print('[START]  服务器已启动...')
+    print('[START]  Server is running...')
     start()
 
