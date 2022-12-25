@@ -15,7 +15,7 @@ class Receiver(object):
         self.FORMAT = 'utf-8'
         self.HEADER = 64  # 与客户端约定好的，第一条信息(会告知数据的总长)的长度
         self.PORT = 5050
-        self.SERVER = '192.168.246.53'
+        self.SERVER = socket.gethostbyname(socket.gethostname())
         self.ADDR = (self.SERVER, self.PORT)
 
     def start(self):

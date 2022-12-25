@@ -16,7 +16,7 @@ class SendMessage(object):
         self.FORMAT = 'utf-8'
         self.HEADER = 64
         self.PORT = 5050
-        self.SERVER = '192.168.246.53'
+        self.SERVER = socket.gethostbyname(socket.gethostname())
         self.ADDR = (self.SERVER, self.PORT)
         self.client = client
         client.connect(self.ADDR)
@@ -72,8 +72,8 @@ class SendMessage(object):
         self.client.send(content)
         self.client.send(videoname.encode(self.FORMAT))
 
-
-sender = SendMessage()
-sender.send_img('../test-files/莫德里奇.jpg')
-sender.send_txt('../test-files/txt.txt')
-sender.send_video('../test-files/mp4.mp4')
+if __name__ == '__main__':
+    sender = SendMessage()
+    sender.send_img('../test-files/莫德里奇.jpg')
+    sender.send_txt('../test-files/xt.txt')
+    sender.send_video('../test-files/mp4.mp4')
